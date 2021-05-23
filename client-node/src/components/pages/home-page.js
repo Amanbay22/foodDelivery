@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from 'react';
-import { getFood, createOrder } from '../../service/FoodService';
+import { getFood, createOrder,searchRestaurant } from '../../service/FoodService';
 
 import './home-page.css';
 
@@ -11,8 +11,21 @@ const HomePage = () =>{
 	const [region, setRegion] = useState("");
 	const [phone, setPhone] = useState("");
 	const [address, setAddress] = useState("");
-
-
+	const [search, setSearch] = useState("");
+	const [filter,setFilter] = useState("asc");
+	const [loading, setLoading] = useState(false);
+	const onHandleSearch=(e)=>{
+		setSearch(e.target.value);
+	}
+	const onSearch=async()=>{
+		setLoading(true);
+		await searchRestaurant(search, filter)
+			.then(res=>{
+				setFoodList(res.data)
+				setLoading(false); 
+			} );
+		
+	}
 	const onHandleName=(e)=>{
 		setName(e.target.value);
 	}
@@ -91,7 +104,9 @@ const HomePage = () =>{
 		localStorage.setItem("orderList", JSON.stringify(newArray));
 		
 	}
-
+	const onHandleFilter = (e)=>{
+		setFilter(e.target.value);
+	}
 	useEffect(()=>{
 		getFood().then(res=>setFoodList(res.data));
 		setOrderList(JSON.parse(localStorage.getItem("orderList"))||[]);
@@ -115,15 +130,27 @@ const HomePage = () =>{
 					Create Order
 				</button>
 				</div>
+				
 				<div className="col-9 ml-5">
-					<div className="row  mt-5 mr-0">
+					<h4 className="mt-5">Search</h4>
+					<div className="d-flex">
+						<input type="text" className="form-control w-50" value={search} onChange={onHandleSearch}/>
+						<select value={filter} onChange={onHandleFilter} className="ml-2">
+							<option value="asc">ASC</option>
+							<option value="des">DES</option>
+						</select>
+						<button className="btn btn-primary ml-2" onClick={onSearch}>Search</button>
+					</div>
+					{!loading?(
+					<div className="row  mt-5 mr-0 mb-5">
 					{
 						foodList.map(data=>{
-							const {name:foodName, price:foodPrice, _id:id , number} = data.menuList;
+							const {name:foodName, price:foodPrice, _id:id , number, image:foodImage} = data.menuList;
 							return(
 								<div className="card col-3 mr-4 mt-2" key={id}>
 									
 									<div className="card-body">
+										<img src={foodImage} alt='foodImage' className="card-img-top mt-2" height="200px" width="100%"/>
 										<h5 className="card-title">{foodName}</h5>
 										<p className="card-text">
 											Price: {foodPrice}<br/>
@@ -136,9 +163,11 @@ const HomePage = () =>{
 							)
 						})
 					}
+				</div>
+								):<h1>Loading...</h1>}
+
+				</div>
 				
-				</div>
-				</div>
 			
 		</div>
 		<div className="modal fade" id="exampleModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -185,5 +214,6 @@ const HomePage = () =>{
 		</div>
 		
 	);
+	
 }
 export default HomePage;
